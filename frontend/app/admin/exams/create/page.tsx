@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Save, HelpCircle, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function CreateExamPage() {
     const [formData, setFormData] = useState({
@@ -15,6 +17,9 @@ export default function CreateExamPage() {
     return (
         <div className="max-w-3xl mx-auto space-y-6">
             <div>
+                <Link href="/admin/exams" className="text-gray-500 hover:text-green-600 flex items-center gap-2 mb-4 text-sm font-medium">
+                    <ArrowLeft className="w-4 h-4" /> Back to Exams
+                </Link>
                 <h1 className="text-2xl font-bold text-gray-900">Create New Exam</h1>
                 <p className="text-gray-500">Configure exam details and add questions.</p>
             </div>
@@ -49,15 +54,21 @@ export default function CreateExamPage() {
                 </div>
 
                 <div className="pt-6 border-t border-gray-100">
-                    <h3 className="text-lg font-semibold mb-4">Questions</h3>
-                    <div className="text-center py-10 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <HelpCircle className="w-5 h-5 text-gray-400" />
+                        Questions
+                    </h3>
+                    <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                         <p className="text-gray-500 text-sm mb-4">No questions added yet</p>
                         <Button variant="outline">Import from Question Bank</Button>
                     </div>
                 </div>
 
                 <div className="flex justify-end pt-4">
-                    <Button size="lg">Create Exam</Button>
+                    <Button size="lg" className="flex items-center gap-2">
+                        <Save className="w-4 h-4" />
+                        Create Exam
+                    </Button>
                 </div>
             </div>
         </div>

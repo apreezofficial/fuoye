@@ -3,8 +3,21 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { useSettings } from '@/context/SettingsContext';
+import { BookOpen, GraduationCap, Trophy, Calendar, Users, Cpu, FileText, CheckCircle } from 'lucide-react';
 
 export default function LandingPage() {
+  const { settings } = useSettings();
+
+  const features = [
+    { icon: <Cpu className="w-6 h-6" />, title: 'AI Assistant', desc: 'Get instant help with course materials and revision using our trained AI.' },
+    { icon: <FileText className="w-6 h-6" />, title: 'Smart CBT', desc: 'Take exams with AI proctoring, instant grading, and detailed analytics.' },
+    { icon: <BookOpen className="w-6 h-6" />, title: 'Course Cloud', desc: 'Access lecture notes, slides, and past questions anytime, anywhere.' },
+    { icon: <Trophy className="w-6 h-6" />, title: 'Gamification', desc: 'Compete on leaderboards and earn badges for academic excellence.' },
+    { icon: <Calendar className="w-6 h-6" />, title: 'Events', desc: 'Never miss a class or exam with smart scheduling and notifications.' },
+    { icon: <Users className="w-6 h-6" />, title: 'Community', desc: 'Collaborate with peers and lecturers in real-time groups.' },
+  ];
+
   return (
     <div className="min-h-screen">
       {/* Navigation */}
@@ -12,7 +25,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <span className="text-2xl font-bold bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
-              FUOYE Smart
+              {settings.schoolName.split(' ')[0]} Smart
             </span>
             <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">BETA</span>
           </div>
@@ -40,8 +53,7 @@ export default function LandingPage() {
             <span className="text-green-600">is Here.</span>
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
-            A next-generation super-app for Federal University Oye-Ekiti.
-            Seamlessly integrate exams, AI tutoring, and collaboration in one ecosystem.
+            {settings.tagline}. A next-generation super-app for students, lecturers, and admins.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -56,17 +68,23 @@ export default function LandingPage() {
           {/* Dashboard Preview */}
           <div className="mt-20 relative mx-auto max-w-5xl">
             <div className="bg-gray-900 rounded-2xl shadow-2xl p-2 border border-gray-800">
-              <div className="bg-gray-800 rounded-xl overflow-hidden aspect-[16/9] flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <p className="text-4xl mb-4">🖥️</p>
+              <div className="bg-gray-800 rounded-xl overflow-hidden aspect-[16/9] flex items-center justify-center text-gray-500 relative">
+                <div className="text-center z-10">
+                  <GraduationCap className="w-16 h-16 mx-auto mb-4 text-gray-600" />
                   <p>Dashboard Preview</p>
                 </div>
+                {/* Abstract UI Elements */}
+                <div className="absolute top-4 left-4 right-4 h-4 bg-gray-700/50 rounded-full"></div>
+                <div className="absolute top-12 left-4 w-1/4 h-full bg-gray-700/30 rounded-lg"></div>
+                <div className="absolute top-12 left-[30%] right-4 h-32 bg-gray-700/30 rounded-lg"></div>
               </div>
             </div>
             {/* Floating Elements */}
-            <div className="absolute -right-10 top-20 bg-white p-4 rounded-xl shadow-xl border border-gray-100 animate-bounce">
+            <div className="absolute -right-10 top-20 bg-white p-4 rounded-xl shadow-xl border border-gray-100 animate-bounce hidden md:block">
               <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">✓</div>
+                <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                  <CheckCircle className="w-6 h-6" />
+                </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900">Exam Submitted</p>
                   <p className="text-xs text-gray-500">CSC 201 • 98% Score</p>
@@ -86,16 +104,9 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { icon: '🤖', title: 'AI Assistant', desc: 'Get instant help with course materials and revision using our trained AI.' },
-              { icon: '📝', title: 'Smart CBT', desc: 'Take exams with AI proctoring, instant grading, and detailed analytics.' },
-              { icon: '☁️', title: 'Course Cloud', desc: 'Access lecture notes, slides, and past questions anytime, anywhere.' },
-              { icon: '🏆', title: 'Gamification', desc: 'Compete on leaderboards and earn badges for academic excellence.' },
-              { icon: '📅', title: 'Events', desc: 'Never miss a class or exam with smart scheduling and notifications.' },
-              { icon: '💬', title: 'Community', desc: 'Collaborate with peers and lecturers in real-time groups.' },
-            ].map((feature, i) => (
+            {features.map((feature, i) => (
               <div key={i} className="p-8 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-xl transition-all border border-gray-100 group">
-                <div className="h-12 w-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
+                <div className="h-12 w-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-green-600 mb-6 group-hover:scale-110 transition-transform">
                   {feature.icon}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
@@ -109,7 +120,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
-          <p>© 2025 Federal University Oye-Ekiti. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {settings.schoolName}. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link href="#" className="hover:text-white">Privacy</Link>
             <Link href="#" className="hover:text-white">Terms</Link>

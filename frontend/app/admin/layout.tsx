@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { LayoutDashboard, Users, BookOpen, FileText, Settings, LogOut } from 'lucide-react';
 
 export default function AdminLayout({
     children,
@@ -12,11 +13,11 @@ export default function AdminLayout({
     const pathname = usePathname();
 
     const menuItems = [
-        { label: 'Dashboard', href: '/admin', icon: '📊' },
-        { label: 'Users', href: '/admin/users', icon: '👥' },
-        { label: 'Courses', href: '/admin/courses', icon: '📚' },
-        { label: 'Exams & CBT', href: '/admin/exams', icon: '📝' },
-        { label: 'Settings', href: '/admin/settings', icon: '⚙️' },
+        { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+        { label: 'Users', href: '/admin/users', icon: Users },
+        { label: 'Courses', href: '/admin/courses', icon: BookOpen },
+        { label: 'Exams & CBT', href: '/admin/exams', icon: FileText },
+        { label: 'Settings', href: '/admin/settings', icon: Settings },
     ];
 
     return (
@@ -30,6 +31,7 @@ export default function AdminLayout({
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                     {menuItems.map((item) => {
                         const isActive = pathname === item.href;
+                        const Icon = item.icon;
                         return (
                             <Link
                                 key={item.href}
@@ -39,7 +41,7 @@ export default function AdminLayout({
                                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                     }`}
                             >
-                                <span className="text-xl">{item.icon}</span>
+                                <Icon className={`w-5 h-5 ${isActive ? 'text-green-700' : 'text-gray-400 group-hover:text-gray-600'}`} />
                                 <span>{item.label}</span>
                             </Link>
                         );
@@ -48,7 +50,7 @@ export default function AdminLayout({
 
                 <div className="p-4 border-t border-gray-100">
                     <button className="flex items-center space-x-3 text-red-600 hover:bg-red-50 w-full px-4 py-2.5 rounded-xl transition-colors">
-                        <span>🚪</span>
+                        <LogOut className="w-5 h-5" />
                         <span>Logout</span>
                     </button>
                 </div>
@@ -61,7 +63,7 @@ export default function AdminLayout({
                         Admin Portal
                     </h2>
                     <div className="flex items-center space-x-4">
-                        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold">
+                        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold border border-green-200">
                             A
                         </div>
                     </div>
