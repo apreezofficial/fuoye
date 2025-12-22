@@ -1,16 +1,36 @@
 import axios from 'axios';
 
+// Update Base URL to point to the 'api' directory inside backend
+// This effectively makes calls like '/settings.php' resolve to '.../backend/api/settings.php'
 const api = axios.create({
-    baseURL: 'https://api.test.com/api',
+    baseURL: 'http://localhost/backend/api',
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// Add a request interceptor to include the auth token
+// Logging for debug
+api.interceptors.response.use(
+    response => response,
+    error => {
+        console.error('API Error:', error.response ? error.response.data : error.message);
+
+        // GLOBAL AUTHENTICATION GUARD
+        // If 401 Unauthorized, clear session and redirect to login
+        if (error.response && error.response.status === 401) {
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user');
+                // Force redirect to login
+                window.location.href = '/login?session=expired';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 api.interceptors.request.use(
     (config) => {
-        // Check if we are in the browser
         if (typeof window !== 'undefined') {
             const token = localStorage.getItem('auth_token');
             if (token) {

@@ -1,83 +1,106 @@
 'use client';
 
-import React from 'react';
-import { Users, FileText, Database, Activity, Bell, Plus, Settings } from 'lucide-react';
-import Link from 'next/link';
-
-const stats = [
-    { label: 'Total Students', value: '12,450', change: '+12%', color: 'blue', icon: Users },
-    { label: 'Active Exams', value: '8', change: 'Live Now', color: 'green', icon: Activity },
-    { label: 'Questions in Bank', value: '45,200', change: '+500 today', color: 'purple', icon: Database },
-    { label: 'System Status', value: 'Healthy', change: '99.9% Uptime', color: 'orange', icon: Settings },
-];
+import React, { useEffect, useState } from 'react';
+import { Users, FileText, Database, Activity, Bell, Plus, Settings, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import api from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 export default function AdminDashboard() {
+    const router = useRouter();
+    const [stats, setStats] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const { data } = await api.get('/admin/stats.php');
+                setStats(data);
+            } catch (error: any) {
+                console.error("Failed to fetch admin stats", error);
+                // If 401, user will be redirected by interceptor
+                // If 403, likely not admin
+                if (error.response?.status === 403) {
+                    router.push('/dashboard'); // Redirect non-admins
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, [router]);
+
+    if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-green-600" /></div>;
+    if (!stats) return <div className="text-center py-20">Failed to load admin data. Access denied.</div>;
+
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-                <p className="text-gray-500">Welcome back, Admin. Here's what's happening today.</p>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+                    <p className="text-sm text-gray-500">Welcome back, Administrator.</p>
+                </div>
+                <div className="flex gap-3">
+                    <Button variant="outline" className="flex items-center gap-2" onClick={() => router.push('/admin/settings')}>
+                        <Settings className="w-4 h-4" /> Settings
+                    </Button>
+                    <Button className="flex items-center gap-2" onClick={() => router.push('/admin/users')}>
+                        <Plus className="w-4 h-4" /> Create New User
+                    </Button>
+                </div>
             </div>
 
+            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat, i) => {
-                    const Icon = stat.icon;
-                    return (
-                        <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden">
-                            <div className={`absolute top-4 right-4 p-2 bg-${stat.color}-50 rounded-lg`}>
-                                <Icon className={`w-5 h-5 text-${stat.color}-600`} />
+                {[
+                    { label: 'Total Students', value: stats.total_students, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: 'Total Lecturers', value: stats.total_lecturers, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
+                    { label: 'Total Courses', value: stats.total_courses, icon: Database, color: 'text-orange-600', bg: 'bg-orange-50' },
+                    { label: 'Departments', value: stats.total_departments, icon: FileText, color: 'text-green-600', bg: 'bg-green-50' },
+                ].map((item, i) => (
+                    <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${item.bg} ${item.color}`}>
+                                <item.icon className="w-6 h-6" />
                             </div>
-                            <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                            <div className="mt-2 flex items-baseline">
-                                <span className="text-3xl font-bold text-gray-900">{stat.value}</span>
-                                <span className={`ml-2 text-sm font-medium text-${stat.color}-600 bg-${stat.color}-50 px-2 py-0.5 rounded-full`}>
-                                    {stat.change}
-                                </span>
-                            </div>
+                            <span className="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-full">Live</span>
                         </div>
-                    );
-                })}
+                        <h3 className="text-2xl font-bold text-gray-900">{item.value}</h3>
+                        <p className="text-sm text-gray-500">{item.label}</p>
+                    </div>
+                ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[300px]">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                    <div className="space-y-4">
-                        {[1, 2, 3].map((_, i) => (
-                            <div key={i} className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                                <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-                                    <Bell className="w-5 h-5" />
-                                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Recent Activity */}
+                <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Activity</h3>
+                    <div className="space-y-6">
+                        {stats.recent_activity?.map((activity: any, i: number) => (
+                            <div key={i} className="flex items-start gap-4">
+                                <div className="w-2 h-2 mt-2 rounded-full bg-green-500"></div>
                                 <div>
-                                    <p className="text-sm font-medium text-gray-900">New Exam Created: CSC 201</p>
-                                    <p className="text-xs text-gray-500">2 minutes ago by Dr. Adebayo</p>
+                                    <p className="text-sm font-medium text-gray-900">{activity.action}</p>
+                                    <p className="text-xs text-gray-500">{activity.user} • {activity.time}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-600 to-green-800 p-6 rounded-2xl shadow-lg text-white">
-                    <h3 className="text-lg font-semibold mb-2">Quick Actions</h3>
-                    <p className="text-green-100 mb-6 text-sm">Manage the platform efficiently.</p>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <Link href="/admin/exams/create" className="bg-white/10 hover:bg-white/20 backdrop-blur-sm p-3 rounded-xl text-left transition-colors flex items-center space-x-2">
-                            <FileText className="w-5 h-5" />
-                            <span>Create New Exam</span>
-                        </Link>
-                        <button className="bg-white/10 hover:bg-white/20 backdrop-blur-sm p-3 rounded-xl text-left transition-colors flex items-center space-x-2">
-                            <Bell className="w-5 h-5" />
-                            <span>Post Announcement</span>
-                        </button>
-                        <Link href="/admin/users" className="bg-white/10 hover:bg-white/20 backdrop-blur-sm p-3 rounded-xl text-left transition-colors flex items-center space-x-2">
-                            <Users className="w-5 h-5" />
-                            <span>Add New User</span>
-                        </Link>
-                        <Link href="/admin/settings" className="bg-white/10 hover:bg-white/20 backdrop-blur-sm p-3 rounded-xl text-left transition-colors flex items-center space-x-2">
-                            <Settings className="w-5 h-5" />
-                            <span>System Settings</span>
-                        </Link>
+                {/* System Notifications */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-gray-900">System Status</h3>
+                        <Bell className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <div className="space-y-4">
+                        <div className="p-3 bg-green-50 rounded-xl text-sm text-green-700 border border-green-100">
+                            ✓ All systems operational
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-xl text-sm text-blue-700 border border-blue-100">
+                            {stats.total_students} active students
+                        </div>
                     </div>
                 </div>
             </div>

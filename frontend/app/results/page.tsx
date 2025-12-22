@@ -1,105 +1,125 @@
 'use client';
 
-import React from 'react';
-import { Button } from '@/components/ui/Button';
-import { Trophy, Clock, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
+import { FileText, Clock, CheckCircle, XCircle, Loader2, Award } from 'lucide-react';
+import api from '@/lib/api';
 
-export default function ResultsPage() {
+export default function ExamHistoryPage() {
+    const [attempts, setAttempts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                const { data } = await api.get('/student/exam-history.php');
+                setAttempts(data);
+            } catch (error) {
+                console.error("Failed to fetch exam history", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchHistory();
+    }, []);
+
+    if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-green-600" /></div>;
+
+    const calculatePercentage = (score: number, total: number) => {
+        return total > 0 ? Math.round((score / total) * 100) : 0;
+    };
+
+    const getGrade = (percentage: number) => {
+        if (percentage >= 70) return { grade: 'A', color: 'text-green-600', bg: 'bg-green-50' };
+        if (percentage >= 60) return { grade: 'B', color: 'text-blue-600', bg: 'bg-blue-50' };
+        if (percentage >= 50) return { grade: 'C', color: 'text-yellow-600', bg: 'bg-yellow-50' };
+        if (percentage >= 40) return { grade: 'D', color: 'text-orange-600', bg: 'bg-orange-50' };
+        return { grade: 'F', color: 'text-red-600', bg: 'bg-red-50' };
+    };
+
     return (
-        <div className="max-w-7xl mx-auto py-10 px-6 space-y-8">
+        <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">My Results</h1>
-                <p className="text-gray-500">Track your academic performance and exam history.</p>
+                <h1 className="text-2xl font-bold text-gray-900">Exam History & Results</h1>
+                <p className="text-gray-500">View your past exam attempts and scores.</p>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-green-600">
-                            <Trophy className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 font-medium">Average Score</p>
-                            <p className="text-2xl font-bold text-gray-900">76%</p>
-                        </div>
-                    </div>
+            {attempts.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
+                    <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900">No exam history</h3>
+                    <p className="text-gray-500 max-w-sm mx-auto mt-2">
+                        You haven't taken any exams yet.
+                    </p>
                 </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
-                            <CheckCircle className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 font-medium">Exams Passed</p>
-                            <p className="text-2xl font-bold text-gray-900">12</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600">
-                            <Clock className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 font-medium">Study Time</p>
-                            <p className="text-2xl font-bold text-gray-900">48h</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            ) : (
+                <div className="space-y-4">
+                    {attempts.map((attempt) => {
+                        const percentage = calculatePercentage(attempt.score, attempt.total_questions);
+                        const gradeInfo = getGrade(percentage);
+                        const isCompleted = attempt.completed_at !== null;
 
-            {/* Results Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
-                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exam Title</th>
-                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
-                            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {[
-                            { course: 'CSC 201', title: 'Mid-Semester Test', date: 'Oct 24, 2024', score: 85, grade: 'A', passed: true },
-                            { course: 'GST 101', title: 'Calculus Quiz', date: 'Oct 12, 2024', score: 92, grade: 'A', passed: true },
-                            { course: 'MTH 101', title: 'General Mathematics', date: 'Sep 15, 2024', score: 65, grade: 'B', passed: true },
-                            { course: 'PHY 101', title: 'Physics Practical', date: 'Sep 10, 2024', score: 45, grade: 'D', passed: false },
-                        ].map((result, i) => (
-                            <tr key={i} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{result.course}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-gray-500">{result.title}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">{result.date}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-full bg-gray-100 rounded-full h-2 w-20">
-                                            <div className={`h-2 rounded-full ${result.passed ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${result.score}%` }}></div>
+                        return (
+                            <div key={attempt.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h3 className="text-lg font-bold text-gray-900">{attempt.exam_title}</h3>
+                                            {isCompleted ? (
+                                                <CheckCircle className="w-5 h-5 text-green-600" />
+                                            ) : (
+                                                <Clock className="w-5 h-5 text-orange-600" />
+                                            )}
                                         </div>
-                                        <span className="text-sm font-bold">{result.score}%</span>
+                                        <p className="text-sm text-gray-500">{attempt.course_code} - {attempt.course_title}</p>
+
+                                        <div className="flex items-center gap-4 mt-4 text-sm text-gray-600">
+                                            <div className="flex items-center gap-1">
+                                                <Clock className="w-4 h-4" />
+                                                <span>{new Date(attempt.started_at).toLocaleDateString()}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <FileText className="w-4 h-4" />
+                                                <span>{attempt.total_questions} questions</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${result.grade === 'A' ? 'bg-green-100 text-green-700' :
-                                            result.grade === 'B' ? 'bg-blue-100 text-blue-700' :
-                                                result.grade === 'D' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
-                                        }`}>
-                                        {result.grade}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right">
-                                    <Link href={`/results/${i}`} className="text-green-600 hover:text-green-700 inline-flex items-center text-sm font-medium transition-colors">
-                                        View <ArrowRight className="w-4 h-4 ml-1" />
-                                    </Link>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+
+                                    {isCompleted && (
+                                        <div className="text-right">
+                                            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${gradeInfo.bg} ${gradeInfo.color} font-bold text-2xl mb-2`}>
+                                                {gradeInfo.grade}
+                                            </div>
+                                            <div className="text-sm text-gray-600">
+                                                {attempt.score}/{attempt.total_questions}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {percentage}%
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {!isCompleted && (
+                                        <div className="text-center px-4 py-2 bg-orange-50 text-orange-700 rounded-lg">
+                                            <p className="text-sm font-medium">In Progress</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {isCompleted && (
+                                    <div className="mt-4 pt-4 border-t border-gray-100">
+                                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                            <div
+                                                className={`h-full ${percentage >= 50 ? 'bg-green-500' : 'bg-red-500'}`}
+                                                style={{ width: `${percentage}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

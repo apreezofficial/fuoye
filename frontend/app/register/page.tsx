@@ -1,116 +1,217 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Mail, Lock, User, Loader2, BookOpen, ArrowRight, GraduationCap, Building } from 'lucide-react';
+import api from '@/lib/api';
 
 export default function RegisterPage() {
-    const [loading, setLoading] = useState(false);
+    const router = useRouter();
+    const [faculties, setFaculties] = useState<any[]>([]);
+    const [departments, setDepartments] = useState<any[]>([]);
+    const [filteredDepts, setFilteredDepts] = useState<any[]>([]);
     const [formData, setFormData] = useState({
-        fullName: '',
+        full_name: '',
         email: '',
-        matricNumber: '',
         password: '',
-        confirmPassword: ''
+        role: 'Student',
+        matric_number: '',
+        faculty_id: '',
+        department_id: '',
+        level: '100'
     });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        // Fetch faculties and departments
+        const fetchData = async () => {
+            try {
+                const { data } = await api.get('/departments.php');
+                // Group by faculty
+                const uniqueFaculties: any[] = [];
+                const facultyMap = new Map();
+
+                data.forEach((dept: any) => {
+                    if (dept.faculty_id && !facultyMap.has(dept.faculty_id)) {
+                        facultyMap.set(dept.faculty_id, true);
+                        uniqueFaculties.push({ id: dept.faculty_id, name: `Faculty ${dept.faculty_id}` });
+                    }
+                });
+
+                setFaculties(uniqueFaculties);
+                setDepartments(data);
+            } catch (error) {
+                console.error("Failed to fetch faculties/departments", error);
+            }
+        };
+        fetchData();
+    }, []);
+
+    useEffect(() => {
+        // Filter departments when faculty changes
+        if (formData.faculty_id) {
+            const filtered = departments.filter(d => d.faculty_id == formData.faculty_id);
+            setFilteredDepts(filtered);
+        } else {
+            setFilteredDepts([]);
+        }
+    }, [formData.faculty_id, departments]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (formData.password !== formData.confirmPassword) {
-            alert("Passwords don't match");
-            return;
-        }
         setLoading(true);
-        // TODO: Integrate with backend
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setLoading(false);
-        console.log('Register with:', formData);
+        setError('');
+
+        try {
+            await api.post('/auth/register.php', formData);
+            router.push('/login?registered=true');
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Registration failed. Try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-[#f8fafc] relative overflow-hidden py-10">
-            {/* Background Decor */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute -top-20 -right-20 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-                <div className="absolute top-40 -left-20 w-96 h-96 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-                <div className="absolute -bottom-32 right-20 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
-            </div>
-
-            <div className="w-full max-w-md p-6 relative z-10">
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-8 space-y-8">
-                    <div className="text-center space-y-2">
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-                            Join Smart Campus
-                        </h1>
-                        <p className="text-gray-500">
-                            Create your student or staff account
-                        </p>
+        <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+            {/* Left Side - Form */}
+            <div className="flex flex-col justify-center px-8 lg:px-20 bg-white">
+                <div className="w-full max-w-md mx-auto space-y-8">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold">F</div>
+                        <span className="text-xl font-bold text-gray-900">fuoye smart</span>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
+                        <p className="text-gray-500 mt-2">Join the academic community today.</p>
+                    </div>
+
+                    {error && (
+                        <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2">
+                            <div className="w-1 h-4 bg-red-500 rounded-full"></div>
+                            {error}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <Input
-                            type="text"
-                            placeholder="John Doe"
                             label="Full Name"
-                            value={formData.fullName}
-                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                            placeholder="e.g. Sola Adebayo"
+                            icon={<User className="w-4 h-4" />}
                             required
+                            value={formData.full_name}
+                            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                         />
 
                         <Input
+                            label="School Email"
                             type="email"
-                            placeholder="student@fuoye.edu.ng"
-                            label="Email Address"
+                            placeholder="name@fuoye.edu.ng"
+                            icon={<Mail className="w-4 h-4" />}
+                            required
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        />
+
+                        <Input
+                            label="Matric Number"
+                            placeholder="e.g. FUO/21/CSC/042"
+                            icon={<GraduationCap className="w-4 h-4" />}
                             required
+                            value={formData.matric_number}
+                            onChange={(e) => setFormData({ ...formData, matric_number: e.target.value })}
                         />
 
-                        <Input
-                            type="text"
-                            placeholder="FUO/21/CSC/..."
-                            label="Matric Number (Students)"
-                            value={formData.matricNumber}
-                            onChange={(e) => setFormData({ ...formData, matricNumber: e.target.value })}
-                        />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Faculty</label>
+                                <select
+                                    className="w-full p-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                                    value={formData.faculty_id}
+                                    onChange={(e) => setFormData({ ...formData, faculty_id: e.target.value, department_id: '' })}
+                                    required
+                                >
+                                    <option value="">Select Faculty</option>
+                                    {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                                <select
+                                    className="w-full p-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                                    value={formData.department_id}
+                                    onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+                                    required
+                                    disabled={!formData.faculty_id}
+                                >
+                                    <option value="">Select Department</option>
+                                    {filteredDepts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Current Level</label>
+                            <select
+                                className="w-full p-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                                value={formData.level}
+                                onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+                                required
+                            >
+                                <option value="100">100 Level</option>
+                                <option value="200">200 Level</option>
+                                <option value="300">300 Level</option>
+                                <option value="400">400 Level</option>
+                            </select>
+                        </div>
 
                         <Input
-                            type="password"
-                            placeholder="••••••••"
                             label="Password"
+                            type="password"
+                            placeholder="Create a strong password"
+                            icon={<Lock className="w-4 h-4" />}
+                            required
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            required
                         />
 
-                        <Input
-                            type="password"
-                            placeholder="••••••••"
-                            label="Confirm Password"
-                            value={formData.confirmPassword}
-                            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                            required
-                        />
-
-                        <Button type="submit" className="w-full" isLoading={loading}>
-                            Create Account
+                        <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Account'}
                         </Button>
                     </form>
 
-                    <div className="relative">
+                    <div className="text-center text-sm text-gray-500 relative">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-200"></div>
+                            <div className="w-full border-t border-gray-100"></div>
                         </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-white text-gray-500">Already have an account?</span>
-                        </div>
+                        <span className="relative bg-white px-2">Already have an account?</span>
                     </div>
 
-                    <div className="text-center">
-                        <Link href="/login" className="font-medium text-green-600 hover:text-green-500 transition-colors">
-                            Sign in instead
-                        </Link>
+                    <Link href="/login">
+                        <Button variant="outline" className="w-full h-12">
+                            Log In <ArrowRight className="ml-2 w-4 h-4" />
+                        </Button>
+                    </Link>
+                </div>
+            </div>
+
+            {/* Right Side - Image/Visual */}
+            <div className="hidden lg:block relative bg-gray-900 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-900/90 to-black/80 z-10"></div>
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40"></div>
+                <div className="relative z-20 flex flex-col justify-end h-full p-20 text-white">
+                    <h2 className="text-4xl font-bold mb-6 italic">"Excellence is not an act, but a habit."</h2>
+                    <div className="flex items-center gap-4">
+                        <div className="flex -space-x-4">
+                            {[1, 2, 3].map(i => <div key={i} className="w-10 h-10 rounded-full border-2 border-green-900 bg-gray-200"></div>)}
+                        </div>
+                        <p className="text-green-100 ml-24">Join the academic revolution</p>
                     </div>
                 </div>
             </div>

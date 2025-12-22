@@ -42,7 +42,7 @@ require_once __DIR__ . '/../routes/api.php';
 
 // Test Route
 $router->get('/api/test', function() {
-    echo json_encode(['message' => 'FUOYE Smart Campus Backend is Running 🚀']);
+    echo json_encode(['message' => 'FUOYE fuoye smart Backend is Running 🚀']);
 });
 
 $router->dispatch();

@@ -1,133 +1,80 @@
-'use client';
-
-import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { useSettings } from '@/context/SettingsContext';
-import { BookOpen, GraduationCap, Trophy, Calendar, Users, Cpu, FileText, CheckCircle } from 'lucide-react';
+import { ArrowRight, BookOpen, Brain, Trophy, Users } from 'lucide-react';
 
 export default function LandingPage() {
-  const { settings } = useSettings();
-
-  const features = [
-    { icon: <Cpu className="w-6 h-6" />, title: 'AI Assistant', desc: 'Get instant help with course materials and revision using our trained AI.' },
-    { icon: <FileText className="w-6 h-6" />, title: 'Smart CBT', desc: 'Take exams with AI proctoring, instant grading, and detailed analytics.' },
-    { icon: <BookOpen className="w-6 h-6" />, title: 'Course Cloud', desc: 'Access lecture notes, slides, and past questions anytime, anywhere.' },
-    { icon: <Trophy className="w-6 h-6" />, title: 'Gamification', desc: 'Compete on leaderboards and earn badges for academic excellence.' },
-    { icon: <Calendar className="w-6 h-6" />, title: 'Events', desc: 'Never miss a class or exam with smart scheduling and notifications.' },
-    { icon: <Users className="w-6 h-6" />, title: 'Community', desc: 'Collaborate with peers and lecturers in real-time groups.' },
-  ];
-
-  return (
-    <div className="min-h-screen">
-      {/* Navigation */}
-      <nav className="fixed w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl font-bold bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
-              {settings.schoolName.split(' ')[0]} Smart
-            </span>
-            <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">BETA</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/login">
-              <Button variant="ghost">Log In</Button>
-            </Link>
-            <Link href="/register">
-              <Button>Get Started</Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-          <div className="absolute -top-[50%] -left-[20%] w-[80%] h-[80%] bg-purple-200/30 rounded-full blur-3xl animate-blob"></div>
-          <div className="absolute top-[20%] -right-[20%] w-[60%] h-[60%] bg-green-200/30 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-gray-900 mb-6">
-            The Future of Learning <br />
-            <span className="text-green-600">is Here.</span>
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
-            {settings.tagline}. A next-generation super-app for students, lecturers, and admins.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register">
-              <Button size="lg" className="px-8 h-14 text-lg">Start Learning Now</Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="outline" size="lg" className="px-8 h-14 text-lg">Student Login</Button>
-            </Link>
-          </div>
-
-          {/* Dashboard Preview */}
-          <div className="mt-20 relative mx-auto max-w-5xl">
-            <div className="bg-gray-900 rounded-2xl shadow-2xl p-2 border border-gray-800">
-              <div className="bg-gray-800 rounded-xl overflow-hidden aspect-[16/9] flex items-center justify-center text-gray-500 relative">
-                <div className="text-center z-10">
-                  <GraduationCap className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-                  <p>Dashboard Preview</p>
+    return (
+        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+            {/* Navigation */}
+            <nav className="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold">F</div>
+                        <span className="text-xl font-bold text-gray-900">fuoye smart</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <Link href="/login">
+                            <Button variant="ghost">Log In</Button>
+                        </Link>
+                        <Link href="/register">
+                            <Button>Get Started</Button>
+                        </Link>
+                    </div>
                 </div>
-                {/* Abstract UI Elements */}
-                <div className="absolute top-4 left-4 right-4 h-4 bg-gray-700/50 rounded-full"></div>
-                <div className="absolute top-12 left-4 w-1/4 h-full bg-gray-700/30 rounded-lg"></div>
-                <div className="absolute top-12 left-[30%] right-4 h-32 bg-gray-700/30 rounded-lg"></div>
-              </div>
-            </div>
-            {/* Floating Elements */}
-            <div className="absolute -right-10 top-20 bg-white p-4 rounded-xl shadow-xl border border-gray-100 animate-bounce hidden md:block">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-                  <CheckCircle className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">Exam Submitted</p>
-                  <p className="text-xs text-gray-500">CSC 201 • 98% Score</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            </nav>
 
-      {/* Features Grid */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900">Everything you need to excel</h2>
-            <p className="text-gray-500 mt-2">Built for students, lecturers, and admins.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {features.map((feature, i) => (
-              <div key={i} className="p-8 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-xl transition-all border border-gray-100 group">
-                <div className="h-12 w-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-green-600 mb-6 group-hover:scale-110 transition-transform">
-                  {feature.icon}
+            {/* Hero Section */}
+            <section className="max-w-7xl mx-auto px-6 py-20 text-center">
+                <div className="inline-block px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium mb-6">
+                    🚀 Smart Campus Platform
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+                <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+                    Your Academic Journey,<br />
+                    <span className="text-green-600">Simplified</span>
+                </h1>
+                <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+                    Access courses, take exams, track progress, and connect with your academic community all in one place.
+                </p>
+                <div className="flex gap-4 justify-center">
+                    <Link href="/register">
+                        <Button size="lg" className="gap-2">
+                            Start Learning <ArrowRight className="w-5 h-5" />
+                        </Button>
+                    </Link>
+                    <Link href="/login">
+                        <Button size="lg" variant="outline">
+                            Sign In
+                        </Button>
+                    </Link>
+                </div>
+            </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
-          <p>© {new Date().getFullYear()} {settings.schoolName}. All rights reserved.</p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <Link href="#" className="hover:text-white">Privacy</Link>
-            <Link href="#" className="hover:text-white">Terms</Link>
-            <Link href="#" className="hover:text-white">Contact</Link>
-          </div>
+            {/* Features */}
+            <section className="max-w-7xl mx-auto px-6 py-20">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {[
+                        { icon: BookOpen, title: 'Course Management', desc: 'Register and manage your courses easily' },
+                        { icon: Brain, title: 'CBT Exams', desc: 'Take computer-based tests anytime' },
+                        { icon: Trophy, title: 'Track Progress', desc: 'Monitor your academic performance' },
+                        { icon: Users, title: 'Community', desc: 'Connect with peers and lecturers' },
+                    ].map((feature, i) => (
+                        <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
+                            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600 mb-4">
+                                <feature.icon className="w-6 h-6" />
+                            </div>
+                            <h3 className="font-bold text-gray-900 mb-2">{feature.title}</h3>
+                            <p className="text-sm text-gray-600">{feature.desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Footer */}
+            <footer className="border-t border-gray-100 mt-20">
+                <div className="max-w-7xl mx-auto px-6 py-8 text-center text-gray-500 text-sm">
+                    © 2025 FUOYE Smart Campus. All rights reserved.
+                </div>
+            </footer>
         </div>
-      </footer>
-    </div>
-  );
+    );
 }
