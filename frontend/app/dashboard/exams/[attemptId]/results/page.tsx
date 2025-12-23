@@ -39,9 +39,11 @@ export default function ExamResultsPage() {
     useEffect(() => {
         const loadResults = async () => {
             try {
-                const { data } = await api.get(`/student/exams.php?attempt_id=${attemptId}`);
+                // Use dedicated results endpoint which supports CSV export too
+                const { data } = await api.get(`/student/exam_results.php?attempt_id=${attemptId}`);
+                // endpoint returns { attempt, questions }
                 setAttempt(data.attempt);
-                setQuestions(data.questions);
+                setQuestions(data.questions || []);
                 setLoading(false);
             } catch (error: any) {
                 console.error('Failed to load results', error);
@@ -98,6 +100,7 @@ export default function ExamResultsPage() {
                             <p className="text-gray-600">{attempt.course_code} - {attempt.course_title}</p>
                             <p className="text-sm text-gray-500 mt-1">{attempt.exam_title}</p>
                         </div>
+                        <div className="flex items-center gap-2">
                         <Button
                             variant="outline"
                             onClick={() => router.push('/dashboard/exams')}
@@ -106,6 +109,56 @@ export default function ExamResultsPage() {
                             <ArrowLeft className="w-4 h-4" />
                             Back to Exams
                         </Button>
+                        <Button
+                            onClick={async () => {
+                                try {
+                                    const url = `/student/exam_results.php?attempt_id=${attemptId}&format=csv`;
+                                    const resp = await api.get(url, { responseType: 'blob' });
+                                    const blob = new Blob([resp.data], { type: 'text/csv' });
+                                    const link = document.createElement('a');
+                                    link.href = window.URL.createObjectURL(blob);
+                                    link.download = `exam_result_${attemptId}.csv`;
+                                    link.click();
+                                } catch (error: any) {
+                                    console.error('Failed to download results', error);
+                                    toast.error('Failed to download results');
+                                }
+                            }}
+                            className="flex items-center gap-2"
+                        >
+                            <Download className="w-4 h-4" />
+                            Download CSV
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                try {
+                                    const win = window.open('', '_blank');
+                                    if (!win) throw new Error('Unable to open print window');
+                                    const style = `\n                                        body { font-family: Arial, sans-serif; padding: 20px; }\n                                        h1 { font-size: 20px; }\n                                        table { width: 100%; border-collapse: collapse; }\n                                        th, td { border: 1px solid #ddd; padding: 8px; }\n                                        th { background: #f3f4f6; }\n                                    `;
+                                    const rowsHtml = questions.map((q: any) => {
+                                        const options = q.options.map((o: string, i: number) => {
+                                            const mark = i === q.correct_answer ? ' (Correct)' : (i === q.user_answer ? ' (Your answer)' : '');
+                                            return `<div>${String.fromCharCode(65 + i)}. ${o}${mark}</div>`;
+                                        }).join('');
+                                        return `\n                                            <tr>\n                                                <td>${q.order}</td>\n                                                <td>${q.question}</td>\n                                                <td>${options}</td>\n                                                <td>${q.user_answer === null ? '' : q.user_answer}</td>\n                                                <td>${q.is_correct ? 'Yes' : 'No'}</td>\n                                            </tr>\n                                        `;
+                                    }).join('');
+
+                                    const html = `\n                                        <html>\n                                        <head><title>Exam Result ${attemptId}</title><style>${style}</style></head>\n                                        <body>\n                                            <h1>Exam Results - ${attempt?.course_code} ${attempt?.course_title}</h1>\n                                            <p>Score: ${attempt?.score}/${attempt?.total_questions} (${Math.round((attempt?.score / attempt?.total_questions) * 100)}%)</p>\n                                            <table>\n                                                <thead>\n                                                    <tr><th>Order</th><th>Question</th><th>Options</th><th>User Answer</th><th>Correct</th></tr>\n                                                </thead>\n                                                <tbody>\n                                                    ${rowsHtml}\n                                                </tbody>\n                                            </table>\n                                        </body>\n                                        </html>\n                                    `;
+                                    win.document.open();
+                                    win.document.write(html);
+                                    win.document.close();
+                                    setTimeout(() => { win.print(); }, 500);
+                                } catch (error) {
+                                    console.error('Failed to open print view', error);
+                                    toast.error('Failed to export PDF');
+                                }
+                            }}
+                            className="flex items-center gap-2"
+                        >
+                            <Download className="w-4 h-4" />
+                            Export PDF
+                        </Button>
+                    </div>
                     </div>
 
                     {/* Score Summary */}

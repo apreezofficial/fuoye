@@ -45,11 +45,35 @@ export default function ExamTakingPage() {
     useEffect(() => {
         const loadExam = async () => {
             try {
-                const { data } = await api.get(`/student/exams.php?attempt_id=${attemptId}`);
+                console.log('Loading exam with attemptId:', attemptId);
+                const response = await api.get(`/student/exam_questions.php?attempt_id=${attemptId}`);
+                console.log('Full HTTP Response:', response);
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                console.log('Full HTTP Response:', response);
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                const data = response.data;
+                console.log('Full response data:', data);
+                console.log('Data type:', typeof data);
+                console.log('Is data an array?', Array.isArray(data));
+                console.log('Data keys:', Object.keys(data || {}));
+                console.log('Attempt data:', data?.attempt);
+                console.log('Questions data:', data?.questions);
+                console.log('Questions count:', data?.questions?.length);
+                
                 const attemptData = data?.attempt;
                 const incomingQuestions: Question[] = Array.isArray(data?.questions) ? data.questions : [];
 
+                console.log('Processed questions:', incomingQuestions);
+                console.log('Attempt found:', !!attemptData);
+                console.log('Questions found:', incomingQuestions.length);
+
                 if (!attemptData || incomingQuestions.length === 0) {
+                    console.error('ERROR: No attempt data or no questions');
+                    console.error('Attempt is:', attemptData);
+                    console.error('Questions is:', incomingQuestions);
                     toast.error('Exam not found or no questions returned. Please start again.');
                     setLoading(false);
                     router.push('/dashboard/exams');
@@ -82,7 +106,9 @@ export default function ExamTakingPage() {
                 
                 setLoading(false);
             } catch (error: any) {
-                console.error('Failed to load exam', error);
+                console.error('Failed to load exam - Full error:', error);
+                console.error('Error response status:', error.response?.status);
+                console.error('Error response data:', error.response?.data);
                 toast.error(error.response?.data?.message || 'Failed to load exam');
                 router.push('/dashboard/exams');
             }
@@ -171,15 +197,15 @@ export default function ExamTakingPage() {
         if (isCompleted) return;
 
         setSubmitting(true);
-        try {
-            await api.put('/student/exams.php', {
+            try {
+            const resp = await api.post('/student/exam_questions.php', {
                 attempt_id: parseInt(attemptId),
                 answers: answers
             });
 
             setIsCompleted(true);
-            toast.success('Exam submitted successfully!');
-            
+            toast.success(`Exam submitted successfully! Score: ${resp.data.score}/${resp.data.total_questions}`);
+
             // Redirect to results after 2 seconds
             setTimeout(() => {
                 router.push(`/dashboard/exams/${attemptId}/results`);

@@ -11,6 +11,7 @@ export default function ExamsPage() {
     const router = useRouter();
     const [courses, setCourses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [attempts, setAttempts] = useState<any[]>([]);
     const [selectedCourse, setSelectedCourse] = useState<any>(null);
     const [showConfig, setShowConfig] = useState(false);
     const [examConfig, setExamConfig] = useState({
@@ -32,6 +33,13 @@ export default function ExamsPage() {
                 );
                 
                 setCourses(registeredCourses);
+                // Fetch past attempts/history
+                try {
+                    const hist = await api.get('/student/exams.php?history=1');
+                    setAttempts(hist.data.attempts || []);
+                } catch (err) {
+                    console.warn('Failed to fetch exam history', err);
+                }
             } catch (error: any) {
                 console.error("Failed to fetch courses", error);
                 toast.error('Failed to load courses', {
@@ -74,6 +82,9 @@ export default function ExamsPage() {
 
     return (
         <div className="space-y-6">
+            <div className="flex justify-end">
+                <Button variant="outline" onClick={() => router.push('/dashboard/exams/history')}>View Past Exams</Button>
+            </div>
             <div>
                 <h1 className="text-2xl font-bold text-gray-900">Take CBT Exam</h1>
                 <p className="text-gray-500">Select a course to take an AI-generated exam.</p>
@@ -136,7 +147,7 @@ export default function ExamsPage() {
                         Register Courses
                     </Button>
                 </div>
-            ) : (
+                ) : (
                 <>
                     <div className="flex justify-end">
                         <Button variant="outline" onClick={() => setShowConfig(!showConfig)}>
@@ -177,6 +188,26 @@ export default function ExamsPage() {
                             </div>
                         ))}
                     </div>
+                    {/* Past Exams History */}
+                    {attempts.length > 0 && (
+                        <div className="mt-8">
+                            <h2 className="text-xl font-semibold mb-4">Past Exams</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {attempts.map((a) => (
+                                    <div key={a.id} className="bg-white rounded-xl p-4 border shadow-sm flex items-center justify-between">
+                                        <div>
+                                            <div className="text-sm text-gray-500">{a.course_code} • {a.course_title}</div>
+                                            <div className="font-medium">{a.exam_title}</div>
+                                            <div className="text-sm text-gray-600">Score: {a.score === null ? 'Not graded' : `${a.score}/${a.total_questions}`} • {a.completed_at ? new Date(a.completed_at).toLocaleString() : 'Not completed'}</div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button variant="outline" onClick={() => router.push(`/dashboard/exams/${a.id}/results`)}>View Results</Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
         </div>
