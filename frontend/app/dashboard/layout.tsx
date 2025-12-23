@@ -19,8 +19,8 @@ export default function StudentLayout({
         { label: 'Assignments', href: '/dashboard/assignments', icon: PenTool },
         { label: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
         { label: 'Study Groups', href: '/dashboard/study-groups', icon: UsersIcon },
-        { label: 'Results', href: '/results', icon: GraduationCap },
-        { label: 'Profile', href: '/profile', icon: Users },
+        { label: 'Results', href: '/dashboard/results', icon: GraduationCap },
+        { label: 'Profile', href: '/dashboard/profile', icon: Users },
     ];
 
     return (

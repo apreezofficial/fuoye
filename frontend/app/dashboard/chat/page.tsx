@@ -60,7 +60,21 @@ export default function ChatPage() {
             const value = selectedConversation.group_id || selectedConversation.other_user_id;
             
             const { data } = await api.get(`/student/chat.php?conversation=1&type=${type}&${param}=${value}`);
-            setMessages(data);
+            // Normalize response into an array so callers can safely use .map
+            let list: any[] = [];
+            if (Array.isArray(data)) {
+                list = data;
+            } else if (data && Array.isArray(data.messages)) {
+                list = data.messages;
+            } else if (data && data.messages) {
+                // if messages is an object keyed by id
+                list = Object.values(data.messages);
+            } else if (data && Array.isArray(data.chat)) {
+                // fallback if backend uses `chat` key
+                list = data.chat;
+            }
+
+            setMessages(list);
         } catch (error: any) {
             console.error('Failed to fetch messages', error);
         }

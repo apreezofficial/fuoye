@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, BookOpen, FileText, Settings, LogOut, PenTool, Users as UsersIcon } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, FileText, Settings, LogOut, PenTool, Users as UsersIcon, ChevronDown } from 'lucide-react';
 
 export default function AdminLayout({
     children,
@@ -11,12 +11,21 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
+    const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
 
     const menuItems = [
         { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
         { label: 'Users', href: '/admin/users', icon: Users },
         { label: 'Courses', href: '/admin/courses', icon: BookOpen },
         { label: 'Assignments', href: '/admin/assignments', icon: PenTool },
+        { 
+            label: 'Exams', 
+            icon: FileText,
+            submenu: [
+                { label: 'Manage Exams', href: '/admin/exams' },
+                { label: 'Exam History', href: '/admin/exams/history' },
+            ]
+        },
         { label: 'Study Groups', href: '/admin/study-groups', icon: UsersIcon },
         { label: 'Settings', href: '/admin/settings', icon: Settings },
     ];
@@ -30,9 +39,48 @@ export default function AdminLayout({
                 </div>
 
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                    {menuItems.map((item) => {
-                        const isActive = pathname === item.href;
+                    {menuItems.map((item: any) => {
                         const Icon = item.icon;
+                        const isSubmenuOpen = expandedMenu === item.label;
+                        
+                        if (item.submenu) {
+                            return (
+                                <div key={item.label}>
+                                    <button
+                                        onClick={() => setExpandedMenu(isSubmenuOpen ? null : item.label)}
+                                        className="w-full flex items-center justify-between space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 group text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                    >
+                                        <div className="flex items-center space-x-3">
+                                            <Icon className="w-5 h-5 text-gray-400 group-hover:text-gray-600" />
+                                            <span>{item.label}</span>
+                                        </div>
+                                        <ChevronDown className={`w-4 h-4 transition ${isSubmenuOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    {isSubmenuOpen && (
+                                        <div className="pl-8 space-y-1 mt-1">
+                                            {item.submenu.map((subitem: any) => {
+                                                const isActive = pathname === subitem.href;
+                                                return (
+                                                    <Link
+                                                        key={subitem.href}
+                                                        href={subitem.href}
+                                                        className={`block px-4 py-2 rounded-lg text-sm transition-all ${
+                                                            isActive
+                                                                ? 'bg-green-50 text-green-700 font-medium'
+                                                                : 'text-gray-600 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        {subitem.label}
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        }
+
+                        const isActive = pathname === item.href;
                         return (
                             <Link
                                 key={item.href}

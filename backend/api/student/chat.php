@@ -77,20 +77,45 @@ if ($method === 'GET') {
 
 // POST: Send message
 if ($method === 'POST') {
-    $data = json_decode(file_get_contents("php://input"), true);
-    
-    if (!isset($data['message']) || empty(trim($data['message']))) {
+    // Support JSON body and form-encoded POSTs
+    $raw = file_get_contents("php://input");
+    $data = json_decode($raw, true);
+    if (!is_array($data)) {
+        // fallback to $_POST for form submissions
+        $data = $_POST;
+    }
+
+    $messageText = isset($data['message']) ? trim($data['message']) : (isset($data['text']) ? trim($data['text']) : '');
+    if ($messageText === '') {
         http_response_code(400);
         echo json_encode(['message' => 'Message content required']);
         exit;
     }
-    
-    $receiverId = isset($data['receiver_id']) ? filter_var($data['receiver_id'], FILTER_VALIDATE_INT) : null;
-    $groupId = isset($data['group_id']) ? filter_var($data['group_id'], FILTER_VALIDATE_INT) : null;
-    $messageType = $data['message_type'] ?? 'text';
-    $fileUrl = $data['file_url'] ?? null;
-    
-    if (!$receiverId && !$groupId) {
+
+    // Accept multiple possible parameter names for compatibility
+    $possibleReceiverKeys = ['receiver_id', 'other_id', 'to', 'receiver', 'other_user_id'];
+    $possibleGroupKeys = ['group_id', 'group', 'groupId'];
+
+    $receiverId = null;
+    foreach ($possibleReceiverKeys as $k) {
+        if (isset($data[$k])) {
+            $receiverId = filter_var($data[$k], FILTER_VALIDATE_INT);
+            break;
+        }
+    }
+
+    $groupId = null;
+    foreach ($possibleGroupKeys as $k) {
+        if (isset($data[$k])) {
+            $groupId = filter_var($data[$k], FILTER_VALIDATE_INT);
+            break;
+        }
+    }
+
+    $messageType = $data['message_type'] ?? ($data['type'] ?? 'text');
+    $fileUrl = $data['file_url'] ?? ($data['fileUrl'] ?? null);
+
+    if ((!$receiverId || $receiverId === false) && (!$groupId || $groupId === false)) {
         http_response_code(400);
         echo json_encode(['message' => 'Either receiver_id or group_id required']);
         exit;
@@ -111,7 +136,7 @@ if ($method === 'POST') {
         INSERT INTO chat_messages (sender_id, receiver_id, group_id, message, message_type, file_url)
         VALUES (?, ?, ?, ?, ?, ?)
     ");
-    $stmt->execute([$user['id'], $receiverId, $groupId, $data['message'], $messageType, $fileUrl]);
+    $stmt->execute([$user['id'], $receiverId, $groupId, $messageText, $messageType, $fileUrl]);
     $messageId = $db->lastInsertId();
     
     // Get the created message
