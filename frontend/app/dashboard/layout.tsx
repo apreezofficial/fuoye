@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, BookOpen, Clock, Settings, LogOut, Home, GraduationCap, FileText, Bell } from 'lucide-react';
+import { Users, BookOpen, Clock, Settings, LogOut, Home, GraduationCap, FileText, Bell, MessageSquare, Users as UsersIcon, PenTool } from 'lucide-react';
 
 export default function StudentLayout({
     children,
@@ -16,6 +16,9 @@ export default function StudentLayout({
         { label: 'Overview', href: '/dashboard', icon: Home },
         { label: 'My Courses', href: '/dashboard/courses', icon: BookOpen },
         { label: 'Exams & CBT', href: '/dashboard/exams', icon: Clock },
+        { label: 'Assignments', href: '/dashboard/assignments', icon: PenTool },
+        { label: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
+        { label: 'Study Groups', href: '/dashboard/study-groups', icon: UsersIcon },
         { label: 'Results', href: '/results', icon: GraduationCap },
         { label: 'Profile', href: '/profile', icon: Users },
     ];

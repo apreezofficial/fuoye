@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -27,14 +28,24 @@ export default function LoginPage() {
             localStorage.setItem('auth_token', token);
             localStorage.setItem('user', JSON.stringify(user));
 
+            toast.success('Login successful!', {
+                description: `Welcome back, ${user.name}!`
+            });
+
             // Redirect based on role
-            if (user.role === 'Admin') {
-                router.push('/admin');
-            } else {
-                router.push('/dashboard');
-            }
+            setTimeout(() => {
+                if (user.role === 'Admin') {
+                    router.push('/admin');
+                } else {
+                    router.push('/dashboard');
+                }
+            }, 500);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+            const errorMessage = err.response?.data?.message || 'Login failed. Please check your credentials.';
+            setError(errorMessage);
+            toast.error('Login failed', {
+                description: errorMessage
+            });
         } finally {
             setLoading(false);
         }
@@ -55,12 +66,6 @@ export default function LoginPage() {
                         <p className="text-gray-500 mt-2">Enter your credentials to access your account.</p>
                     </div>
 
-                    {error && (
-                        <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-                            <div className="w-1 h-4 bg-red-500 rounded-full"></div>
-                            {error}
-                        </div>
-                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <Input

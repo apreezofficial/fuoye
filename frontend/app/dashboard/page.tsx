@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Clock, BookOpen, GraduationCap, Calendar, Loader2, User } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function StudentDashboard() {
     const [data, setData] = useState<any>(null);
@@ -14,8 +15,11 @@ export default function StudentDashboard() {
             try {
                 const { data } = await api.get('/student/dashboard.php');
                 setData(data);
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Failed to fetch dashboard data", error);
+                toast.error('Failed to load dashboard', {
+                    description: error.response?.data?.message || 'Please refresh the page'
+                });
             } finally {
                 setLoading(false);
             }

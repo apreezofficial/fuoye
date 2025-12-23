@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Users, UserPlus, Search, MoreVertical, Trash2, Shield, GraduationCap, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function UsersPage() {
     const [users, setUsers] = useState<any[]>([]);
@@ -37,22 +38,32 @@ export default function UsersPage() {
 
     const handleCreate = async () => {
         try {
+            toast.loading('Creating user...', { id: 'create-user' });
             await api.post('/admin/users.php', formData);
+            toast.success('User created successfully!', { id: 'create-user' });
             setShowModal(false);
             fetchUsers();
             setFormData({ full_name: '', email: '', password: 'password123', role: 'Student', matric_number: '', level: '100' });
         } catch (e: any) {
-            alert('Failed to create user: ' + (e.response?.data?.message || e.message));
+            toast.error('Failed to create user', {
+                id: 'create-user',
+                description: e.response?.data?.message || e.message
+            });
         }
     };
 
     const handleDelete = async (id: number) => {
         if (!confirm('Are you sure you want to delete this user?')) return;
         try {
+            toast.loading('Deleting user...', { id: 'delete-user' });
             await api.delete(`/admin/users.php?id=${id}`);
+            toast.success('User deleted successfully!', { id: 'delete-user' });
             setUsers(users.filter(u => u.id !== id));
-        } catch (e) {
-            alert('Failed to delete user');
+        } catch (e: any) {
+            toast.error('Failed to delete user', {
+                id: 'delete-user',
+                description: e.response?.data?.message || 'Please try again'
+            });
         }
     };
 

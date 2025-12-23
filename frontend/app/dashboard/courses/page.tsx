@@ -2,27 +2,93 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { BookOpen, User, Clock, Download, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { BookOpen, User, Download, Loader2, CheckCircle, ShieldCheck, Plus, Link2 } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 export default function StudentCoursesPage() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [materials, setMaterials] = useState<Record<number, any[]>>({});
+    const [materialsLoading, setMaterialsLoading] = useState<Record<number, boolean>>({});
+    const [materialsOpen, setMaterialsOpen] = useState<Record<number, boolean>>({});
+    const [newMaterial, setNewMaterial] = useState<Record<number, { title: string; description: string; file_url: string }>>({});
 
     useEffect(() => {
         const fetchCourses = async () => {
             try {
                 const { data } = await api.get('/student/courses.php');
                 setData(data);
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Failed to fetch courses", error);
+                toast.error('Failed to load courses', {
+                    description: error.response?.data?.message || 'Please try again later'
+                });
             } finally {
                 setLoading(false);
             }
         };
         fetchCourses();
     }, []);
+
+    const toggleMaterials = async (courseId: number) => {
+        setMaterialsOpen((prev) => ({ ...prev, [courseId]: !prev[courseId] }));
+        if (!materials[courseId]) {
+            await fetchMaterials(courseId);
+        }
+    };
+
+    const fetchMaterials = async (courseId: number) => {
+        setMaterialsLoading((prev) => ({ ...prev, [courseId]: true }));
+        try {
+            const { data } = await api.get(`/student/materials.php?course_id=${courseId}`);
+            setMaterials((prev) => ({ ...prev, [courseId]: data || [] }));
+        } catch (error: any) {
+            toast.error('Failed to load materials', {
+                description: error.response?.data?.message || 'Please try again later',
+            });
+        } finally {
+            setMaterialsLoading((prev) => ({ ...prev, [courseId]: false }));
+        }
+    };
+
+    const updateNewMaterial = (courseId: number, partial: Partial<{ title: string; description: string; file_url: string }>) => {
+        setNewMaterial((prev) => ({
+            ...prev,
+            [courseId]: {
+                title: prev[courseId]?.title || '',
+                description: prev[courseId]?.description || '',
+                file_url: prev[courseId]?.file_url || '',
+                ...partial,
+            },
+        }));
+    };
+
+    const uploadMaterial = async (courseId: number) => {
+        const payload = newMaterial[courseId] || { title: '', description: '', file_url: '' };
+        if (!payload.title.trim() || !payload.file_url.trim()) {
+            toast.error('Please add a title and file URL');
+            return;
+        }
+        try {
+            toast.loading('Uploading material...', { id: `upload-${courseId}` });
+            await api.post('/student/materials.php', {
+                course_id: courseId,
+                title: payload.title,
+                description: payload.description,
+                file_url: payload.file_url,
+            });
+            toast.success('Material uploaded! Pending admin verification.', { id: `upload-${courseId}` });
+            await fetchMaterials(courseId);
+            updateNewMaterial(courseId, { title: '', description: '', file_url: '' });
+        } catch (error: any) {
+            toast.error('Failed to upload', {
+                id: `upload-${courseId}`,
+                description: error.response?.data?.message || 'Please try again',
+            });
+        }
+    };
 
     if (loading) return <div className="h-96 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-green-600" /></div>;
     if (!data) return <div className="text-center py-20">Failed to load courses. Please login again.</div>;
@@ -77,16 +143,93 @@ export default function StudentCoursesPage() {
                                                 <User className="w-4 h-4" /> {course.unit} Units • {course.dept_code || 'General'}
                                             </p>
                                         </div>
-                                        <Button variant="outline" size="sm" className="hidden md:flex">
-                                            <Download className="w-4 h-4 mr-2" /> Syllabus
+                                        <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => toggleMaterials(course.id)}>
+                                            <Download className="w-4 h-4 mr-2" /> Materials
                                         </Button>
                                     </div>
                                 </div>
 
                                 <div className="flex gap-3 mt-4 md:mt-0">
-                                    <Button className="flex-1">View Materials</Button>
-                                    <Button variant="secondary" className="flex-1 md:flex-none">Resources</Button>
+                                    <Button className="flex-1" onClick={() => toggleMaterials(course.id)}>View Materials</Button>
+                                    <Button variant="secondary" className="flex-1 md:flex-none" onClick={() => toggleMaterials(course.id)}>Upload</Button>
                                 </div>
+
+                                {materialsOpen[course.id] && (
+                                    <div className="mt-4 border-t border-gray-100 pt-4 space-y-4">
+                                        <div className="flex items-center gap-2">
+                                            <Download className="w-4 h-4 text-gray-500" />
+                                            <h4 className="font-semibold text-gray-900">Course Materials</h4>
+                                            {materialsLoading[course.id] && <Loader2 className="w-4 h-4 animate-spin text-green-600" />}
+                                        </div>
+
+                                        {/* Upload form */}
+                                        <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-4 space-y-3">
+                                            <div className="grid md:grid-cols-2 gap-3">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Title"
+                                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                                    value={newMaterial[course.id]?.title || ''}
+                                                    onChange={(e) => updateNewMaterial(course.id, { title: e.target.value })}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="File URL (e.g. drive link)"
+                                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                                    value={newMaterial[course.id]?.file_url || ''}
+                                                    onChange={(e) => updateNewMaterial(course.id, { file_url: e.target.value })}
+                                                />
+                                            </div>
+                                            <textarea
+                                                placeholder="Description (optional)"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                                rows={2}
+                                                value={newMaterial[course.id]?.description || ''}
+                                                onChange={(e) => updateNewMaterial(course.id, { description: e.target.value })}
+                                            />
+                                            <div className="flex justify-end">
+                                                <Button size="sm" onClick={() => uploadMaterial(course.id)} className="flex items-center gap-2">
+                                                    <Plus className="w-4 h-4" />
+                                                    Upload
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* Materials list */}
+                                        {materials[course.id]?.length === 0 ? (
+                                            <p className="text-sm text-gray-500">No materials yet.</p>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {materials[course.id]?.map((mat) => (
+                                                    <div key={mat.id} className="border border-gray-200 rounded-lg p-3 flex items-start justify-between gap-3">
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-semibold text-gray-900">{mat.title}</span>
+                                                                {mat.is_verified && (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 border border-green-200">
+                                                                        <ShieldCheck className="w-3 h-3" />
+                                                                        Verified
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-sm text-gray-600 line-clamp-2">{mat.description}</p>
+                                                            <p className="text-xs text-gray-500">By {mat.uploader_name}</p>
+                                                        </div>
+                                                        <a
+                                                            href={mat.file_url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-green-700 text-sm flex items-center gap-1 hover:underline"
+                                                        >
+                                                            <Link2 className="w-4 h-4" />
+                                                            Open
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

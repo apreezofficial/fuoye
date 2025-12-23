@@ -1,6 +1,15 @@
 <?php
 require_once __DIR__ . '/../../core/bootstrap.php';
 use Utils\Jwt;
+use Utils\Security;
+
+// Rate limiting
+$clientIp = Security::getClientIp();
+if (!Security::checkRateLimit('login_' . $clientIp, 5, 300)) {
+    http_response_code(429);
+    echo json_encode(['message' => 'Too many login attempts. Please try again later.']);
+    exit;
+}
 
 $data = json_decode(file_get_contents("php://input"));
 
@@ -10,8 +19,16 @@ if (!isset($data->email) || !isset($data->password)) {
     exit;
 }
 
+// Input validation
+$email = Security::sanitize($data->email);
+if (!Security::validateEmail($email)) {
+    http_response_code(400);
+    echo json_encode(['message' => 'Invalid email format']);
+    exit;
+}
+
 $stmt = $db->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
-$stmt->execute([$data->email]);
+$stmt->execute([$email]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($user && password_verify($data->password, $user['password_hash'])) {

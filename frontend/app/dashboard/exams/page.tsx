@@ -2,36 +2,71 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Clock, FileText, Play, Loader2, CheckCircle } from 'lucide-react';
+import { BookOpen, Play, Loader2, FileText, Clock, GraduationCap } from 'lucide-react';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function ExamsPage() {
     const router = useRouter();
-    const [exams, setExams] = useState<any[]>([]);
+    const [courses, setCourses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedCourse, setSelectedCourse] = useState<any>(null);
+    const [showConfig, setShowConfig] = useState(false);
+    const [examConfig, setExamConfig] = useState({
+        duration_minutes: 60,
+        total_questions: 20
+    });
 
     useEffect(() => {
-        const fetchExams = async () => {
+        const fetchCourses = async () => {
             try {
-                const { data } = await api.get('/student/exams.php');
-                setExams(data);
-            } catch (error) {
-                console.error("Failed to fetch exams", error);
+                const { data } = await api.get('/student/courses.php');
+                // Get registered courses
+                const registeredStmt = await api.get('/student/register-courses.php');
+                const registeredIds = registeredStmt.data.registered_courses || [];
+                
+                // Filter to only show registered courses
+                const registeredCourses = data.courses.filter((course: any) => 
+                    registeredIds.includes(course.id)
+                );
+                
+                setCourses(registeredCourses);
+            } catch (error: any) {
+                console.error("Failed to fetch courses", error);
+                toast.error('Failed to load courses', {
+                    description: error.response?.data?.message || 'Please try again later'
+                });
             } finally {
                 setLoading(false);
             }
         };
-        fetchExams();
+        fetchCourses();
     }, []);
 
-    const startExam = async (examId: number) => {
+    const startExam = async (course: any) => {
         try {
-            const { data } = await api.post('/student/exams.php', { exam_id: examId });
-            // Navigate to exam taking page with attempt data
+            toast.loading('Generating questions with AI...', {
+                id: 'exam-start'
+            });
+            
+            const { data } = await api.post('/student/exams.php', {
+                course_id: course.id,
+                duration_minutes: examConfig.duration_minutes,
+                total_questions: examConfig.total_questions
+            });
+            
+            toast.success('Exam ready!', {
+                id: 'exam-start',
+                description: 'Good luck!'
+            });
+            
             router.push(`/dashboard/exams/${data.attempt_id}`);
-        } catch (error) {
-            alert('Failed to start exam');
+        } catch (error: any) {
+            toast.error('Failed to start exam', {
+                id: 'exam-start',
+                description: error.response?.data?.message || 'Please try again'
+            });
         }
     };
 
@@ -40,53 +75,109 @@ export default function ExamsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Exams & CBT</h1>
-                <p className="text-gray-500">Take computer-based tests for your registered courses.</p>
+                <h1 className="text-2xl font-bold text-gray-900">Take CBT Exam</h1>
+                <p className="text-gray-500">Select a course to take an AI-generated exam.</p>
             </div>
 
-            {exams.length === 0 ? (
+            {/* Exam Configuration */}
+            {showConfig && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h3 className="font-bold text-gray-900 mb-4">Exam Settings</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Duration (minutes)
+                            </label>
+                            <input
+                                type="number"
+                                min="15"
+                                max="180"
+                                value={examConfig.duration_minutes}
+                                onChange={(e) => setExamConfig({
+                                    ...examConfig,
+                                    duration_minutes: parseInt(e.target.value) || 60
+                                })}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Number of Questions
+                            </label>
+                            <input
+                                type="number"
+                                min="5"
+                                max="50"
+                                value={examConfig.total_questions}
+                                onChange={(e) => setExamConfig({
+                                    ...examConfig,
+                                    total_questions: parseInt(e.target.value) || 20
+                                })}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            />
+                        </div>
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                        <Button onClick={() => setShowConfig(false)} variant="outline">
+                            Close
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {courses.length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
-                    <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900">No exams available</h3>
-                    <p className="text-gray-500 max-w-sm mx-auto mt-2">
-                        There are no active exams for your courses at the moment.
+                    <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900">No registered courses</h3>
+                    <p className="text-gray-500 max-w-sm mx-auto mt-2 mb-4">
+                        You need to register for courses first before taking exams.
                     </p>
+                    <Button onClick={() => router.push('/dashboard/register-courses')}>
+                        Register Courses
+                    </Button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {exams.map((exam) => (
-                        <div key={exam.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all">
-                            <div className="flex items-start justify-between mb-4">
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900">{exam.title}</h3>
-                                    <p className="text-sm text-gray-500">{exam.course_code} - {exam.course_title}</p>
+                <>
+                    <div className="flex justify-end">
+                        <Button variant="outline" onClick={() => setShowConfig(!showConfig)}>
+                            {showConfig ? 'Hide' : 'Show'} Settings
+                        </Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {courses.map((course) => (
+                            <div key={course.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex-1">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-blue-100 rounded-xl flex items-center justify-center mb-3">
+                                            <BookOpen className="w-6 h-6 text-green-600" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-1">{course.code}</h3>
+                                        <p className="text-sm text-gray-600 line-clamp-2">{course.title}</p>
+                                    </div>
                                 </div>
-                                <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                                    Active
-                                </div>
-                            </div>
 
-                            <div className="space-y-2 mb-6">
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <Clock className="w-4 h-4" />
-                                    <span>{exam.duration_minutes} minutes</span>
+                                <div className="space-y-2 mb-4 text-sm text-gray-600">
+                                    <div className="flex items-center gap-2">
+                                        <GraduationCap className="w-4 h-4" />
+                                        <span>{course.level} Level</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <FileText className="w-4 h-4" />
+                                        <span>{course.unit} Units</span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <FileText className="w-4 h-4" />
-                                    <span>{exam.total_questions} questions</span>
-                                </div>
-                            </div>
 
-                            <Button
-                                onClick={() => startExam(exam.id)}
-                                className="w-full flex items-center justify-center gap-2"
-                            >
-                                <Play className="w-4 h-4" />
-                                Start Exam
-                            </Button>
-                        </div>
-                    ))}
-                </div>
+                                <Button
+                                    onClick={() => startExam(course)}
+                                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                                >
+                                    <Play className="w-4 h-4" />
+                                    Start Exam
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                </>
             )}
         </div>
     );

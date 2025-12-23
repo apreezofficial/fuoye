@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Mail, Lock, User, Loader2, BookOpen, ArrowRight, GraduationCap, Building } from 'lucide-react';
 import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -67,10 +68,22 @@ export default function RegisterPage() {
         setError('');
 
         try {
+            toast.loading('Creating your account...', { id: 'register' });
             await api.post('/auth/register.php', formData);
-            router.push('/login?registered=true');
+            toast.success('Account created successfully!', {
+                id: 'register',
+                description: 'You can now log in to your account'
+            });
+            setTimeout(() => {
+                router.push('/login?registered=true');
+            }, 1000);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Registration failed. Try again.');
+            const errorMessage = err.response?.data?.message || 'Registration failed. Try again.';
+            setError(errorMessage);
+            toast.error('Registration failed', {
+                id: 'register',
+                description: errorMessage
+            });
         } finally {
             setLoading(false);
         }
@@ -91,12 +104,6 @@ export default function RegisterPage() {
                         <p className="text-gray-500 mt-2">Join the academic community today.</p>
                     </div>
 
-                    {error && (
-                        <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 flex items-center gap-2">
-                            <div className="w-1 h-4 bg-red-500 rounded-full"></div>
-                            {error}
-                        </div>
-                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <Input

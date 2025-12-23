@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, BookOpen, FileText, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, FileText, Settings, LogOut, PenTool, Users as UsersIcon } from 'lucide-react';
 
 export default function AdminLayout({
     children,
@@ -16,7 +16,8 @@ export default function AdminLayout({
         { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
         { label: 'Users', href: '/admin/users', icon: Users },
         { label: 'Courses', href: '/admin/courses', icon: BookOpen },
-        { label: 'Exams & CBT', href: '/admin/exams', icon: FileText },
+        { label: 'Assignments', href: '/admin/assignments', icon: PenTool },
+        { label: 'Study Groups', href: '/admin/study-groups', icon: UsersIcon },
         { label: 'Settings', href: '/admin/settings', icon: Settings },
     ];
 
